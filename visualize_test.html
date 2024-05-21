@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Thermal Map for Compressed Text with Pagination</title>
+  <style>
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1px;
+    }
+
+    .cell {
+      flex: 0 0 auto;
+      height: 10px;
+      border: 1px solid black;
+    }
+
+    .pagination {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .pagination button {
+      margin: 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="grid">
+      <div v-for="(item, index) in visibleData" :key="index" class="cell" :style="cellStyle(item)">
+        {{ item.value }}
+      </div>
+    </div>
+
+    <div class="pagination">
+      <button @click="previousPage" :disabled="currentPage === 0">Previous</button>
+      <button @click="nextPage" :disabled="currentPage === totalPages - 1">Next</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        data: [],
+        itemsPerPage: 1000,
+        currentPage: 0
+      },
+      computed: {
+        visibleData() {
+          const startIndex = this.currentPage * this.itemsPerPage;
+          const endIndex = startIndex + this.itemsPerPage;
+          return this.data.slice(startIndex, endIndex);
+        },
+        totalPages() {
+          return Math.ceil(this.data.length / this.itemsPerPage);
+        }
+      },
+      created() {
+        this.generateData();
+      },
+      methods: {
+        generateData() {
+          for (let i = 0; i < 10000; i++) {
+            this.data.push({
+              raw: Math.floor(Math.random() * 100),
+              size: Math.floor(Math.random() * 10),
+              value: Math.floor(Math.random() * 100),
+              type: 'lit',
+              out: i
+            });
+          }
+        },
+        cellStyle(item) {
+          return {
+            backgroundColor: `rgb(${item.size * 10}, 0, 0)`,
+            width: `${item.size * 10}px`
+          };
+        },
+        previousPage() {
+          if (this.currentPage > 0) {
+            this.currentPage--;
+          }
+        },
+        nextPage() {
+          if (this.currentPage < this.totalPages - 1) {
+            this.currentPage++;
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
