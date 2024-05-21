@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LZ77 Algorithm Demo</title>
+</head>
+<body>
+  <h1>LZ77 Algorithm Demo</h1>
+  
+  <script>
+    function compress(input) {
+      var dictionary = "";
+      var compressed = [];
+      
+      for (var i = 0; i < input.length; i++) {
+        var currentChar = input.charAt(i);
+        var searchIndex = dictionary.indexOf(currentChar);
+        
+        if (searchIndex !== -1) {
+          var searchLength = 1;
+          
+          while (dictionary.indexOf(input.substr(i, searchLength)) !== -1 && i + searchLength <= input.length) {
+            searchIndex = dictionary.indexOf(input.substr(i, searchLength));
+            searchLength++;
+          }
+          
+          searchLength--;
+          
+          var offset = dictionary.length - searchIndex;
+          var length = searchLength;
+          compressed.push(encodePair(offset, length));
+        } else {
+          compressed.push(encodeLiteral(currentChar));
+        }
+        
+        dictionary += currentChar;
+      }
+      
+      return compressed;
+    }
+
+    function encodePair(offset, length) {
+      var pair = (offset << 4) | length;
+      return encodeBinary(pair, 12);
+    }
+
+    function encodeLiteral(value) {
+      var literal = value.charCodeAt(0);
+      return encodeBinary(literal, 8);
+    }
+
+    function encodeBinary(value, bits) {
+      var binary = value.toString(2);
+      while (binary.length < bits) {
+        binary = "0" + binary;
+      }
+      return binary;
+    }
+
+    // Example usage:
+    var input = "Hello, world!";
+    var compressedOutput = compress(input);
+    console.log(compressedOutput);
+  </script>
+</body>
+</html>
