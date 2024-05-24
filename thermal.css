@@ -1,0 +1,21 @@
+
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
+}
+
+.cell {
+    flex: 0 0 auto;
+    height: 10px;
+    border: 1px solid black;
+}
+
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination button {
+    margin: 0 5px;
+}

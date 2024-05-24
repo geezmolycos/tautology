@@ -1,9 +1,55 @@
+decodeTiny_detail = function(lmap, LL, len, data, pos, tree) {
+	var detail = {symbols: [], data_begin: pos};
+	var bitsE = UZIP.F._bitsE, get17 = UZIP.F._get17;
+	var i = 0;
+	while(i<len) {
+		var symbol = {};
+		detail.symbols.push(symbol);
+		var code = lmap[get17(data, pos)&LL];
+		symbol.pos = pos - detail.data_begin;
+		symbol.size = code & 15;
+		symbol.raw = bitsE(data, pos, symbol.size);
+		pos+=symbol.size;
+		var lit = code>>>4;
+		symbol.value = lit;
+		if(lit<=15) {  symbol.type = 'lit'; tree[i]=lit;  i++;  }
+		else {
+			var ll = 0, n = 0;
+			if(lit==16) {
+				symbol.type = 'rep';
+				symbol.length_base_value = 3;
+				symbol.length_extra_size = 2;
+				symbol.length_extra_value = bitsE(data, pos, 2);
+				n = (3  + symbol.length_extra_value);  pos += 2;  ll = tree[i-1];
+			}
+			else if(lit==17) {
+				symbol.type = 'rpz';
+				symbol.length_base_value = 3;
+				symbol.length_extra_size = 3;
+				symbol.length_extra_value = bitsE(data, pos, 3);
+				n = (3  + symbol.length_extra_value);  pos += 3;
+			}
+			else if(lit==18) {
+				symbol.type = 'rpz';
+				symbol.length_base_value = 11;
+				symbol.length_extra_size = 7;
+				symbol.length_extra_value = bitsE(data, pos, 7);
+				n = (11 + symbol.length_extra_value);  pos += 7;
+			}
+			var ni = i+n;
+			while(i<ni) {  tree[i]=ll;  i++; }
+		}
+	}
+	detail.data_length = pos - detail.data_begin;
+	return detail;
+}
+
 inflate_detail = function(data, buf) {
     var detail = {blocks: []};
 
 	var u8=Uint8Array;
 	if(data[0]==3 && data[1]==0) return {};
-	var F=UZIP.F, bitsF = F._bitsF, bitsE = F._bitsE, decodeTiny = F._decodeTiny, makeCodes = F.makeCodes, codes2map=F.codes2map, get17 = F._get17;
+	var F=UZIP.F, bitsF = F._bitsF, bitsE = F._bitsE, decodeTiny = decodeTiny_detail, makeCodes = F.makeCodes, codes2map=F.codes2map, get17 = F._get17;
 	var U = F.U;
 
 	var noBuf = (buf==null);
@@ -53,21 +99,32 @@ inflate_detail = function(data, buf) {
 			var ppos = pos;
 			for(var i=0; i<38; i+=2) {  U.itree[i]=0;  U.itree[i+1]=0;  }
 			var tl = 1;
+			var itree_raw = [];
+			detail_block.code_length_tree_code_lengths = itree_raw;
 			for(var i=0; i<HCLEN; i++) {
                 var l=bitsE(data, pos+i*3, 3);  U.itree[(U.ordr[i]<<1)+1] = l;  if(l>tl)tl=l;
+				itree_raw.push(l);
             }  pos+=3*HCLEN;  //console.log(itree);
+			// itree is stored as [code, code_length, code, code_length, ...]
 			makeCodes(U.itree, tl);
 			codes2map(U.itree, tl, U.imap);
-            detail_block.itree = U.itree;
+            detail_block.code_length_tree = U.itree;
+            detail_block.code_length_map = U.imap;
 
 			lmap = U.lmap;  dmap = U.dmap;
 
-			pos = decodeTiny(U.imap, (1<<tl)-1, HLIT+HDIST, data, pos, U.ttree);
-            detail_block.ttree = U.ttree;
+			var tree_detail = decodeTiny(U.imap, (1<<tl)-1, HLIT+HDIST, data, pos, U.ttree);
+			pos += tree_detail.data_length;
+			detail_block.trees_detail = tree_detail;
+			// ttree is code length only
+            detail_block.trees_code_lengths = U.ttree;
+			// copyout scarces ttree
 			var mx0 = F._copyOut(U.ttree,    0, HLIT , U.ltree);  ML = (1<<mx0)-1;
 			var mx1 = F._copyOut(U.ttree, HLIT, HDIST, U.dtree);  MD = (1<<mx1)-1;
-            detail_block.ltree = U.ltree;
-            detail_block.dtree = U.dtree;
+            detail_block.literal_length_tree = U.ltree;
+            detail_block.literal_length_map = U.lmap;
+            detail_block.distance_tree = U.dtree;
+            detail_block.distance_map = U.dmap;
 
 			//var ml = decodeTiny(U.imap, (1<<tl)-1, HLIT , data, pos, U.ltree); ML = (1<<(ml>>>24))-1;  pos+=(ml&0xffffff);
 			makeCodes(U.ltree, mx0);
@@ -85,10 +142,11 @@ inflate_detail = function(data, buf) {
             var symbol = {};
             detail_block.symbols.push(symbol);
 			var code = lmap[get17(data, pos) & ML];
-            symbol.raw = bitsE(data, pos, code & 15);
-            pos += code&15;
-			var lit = code>>>4;  //U.lhst[lit]++;
+			symbol.pos = pos - detail_block.data_begin;
             symbol.size = code & 15;
+            symbol.raw = bitsE(data, pos, symbol.size);
+            pos += symbol.size;
+			var lit = code>>>4;  //U.lhst[lit]++;
             symbol.value = lit;
 			if((lit>>>8)==0) {  symbol.type = 'lit'; symbol.out = off; buf[off++] = lit;  }
 			else if(lit==256) {  symbol.type = 'end'; break;  }
