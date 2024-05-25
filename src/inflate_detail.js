@@ -1,4 +1,6 @@
-decodeTiny_detail = function(lmap, LL, len, data, pos, tree) {
+import UZIP from 'uzip'
+
+function decodeTiny_detail(lmap, LL, len, data, pos, tree) {
 	var detail = {symbols: [], data_begin: pos};
 	var bitsE = UZIP.F._bitsE, get17 = UZIP.F._get17;
 	var i = 0;
@@ -44,7 +46,7 @@ decodeTiny_detail = function(lmap, LL, len, data, pos, tree) {
 	return detail;
 }
 
-inflate_detail = function(data, buf) {
+export function inflate_detail(data, buf) {
     var detail = {blocks: []};
 
 	var u8=Uint8Array;

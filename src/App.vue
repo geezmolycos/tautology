@@ -1,47 +1,29 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import ListView from './components/list-view/ListView.vue'
+import DeflateRoot from './components/list-view/DeflateRoot.vue'
+import { deflateRaw } from 'uzip'
+import { inflate_detail } from './inflate_detail.js'
+import { ref } from 'vue'
+
+const str = `12345678924187967432017594852984152018941598520498602498718413174981074710180974891607418091074`;
+const encoder = new TextEncoder();
+const encodedArray = encoder.encode(str, {});
+const deflated = deflateRaw(encodedArray, {level:9});
+const detail = inflate_detail(deflated);
+console.log(detail);
+
+const decoder = new TextDecoder();
+const decodedString = decoder.decode(detail.buf);
+console.log(decodedString);
+const detailRef = ref(detail);
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <ListView>
+    <DeflateRoot :detail="detailRef"></DeflateRoot>
+  </ListView>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-}
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
 </style>
