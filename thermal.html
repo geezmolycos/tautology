@@ -6,68 +6,43 @@
     <title>tautology</title>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/uzip@0.20201231.0/UZIP.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <script src="./inflate_detail.js"></script>
+    <script src="./list_view.js"></script>
     <link rel="stylesheet" href="thermal.css" />
 </head>
 <body>
     <div id="app">
-        <div class="rows">
-
+        <div id="list-view">
+            <deflate-root :detail="detail"></deflate-root>
         </div>
-        <tree-list></tree-list>
     </div>
     <script>
-        // new Vue({
-        //     el: '#app',
-        //     data: {
-                
-        //     },
-        //     computed: {
-
-        //     },
-        //     created() {
-
-        //     },
-        //     methods: {
-
-        //     }
-        // });
-        Vue.component('tree-item', {
-            template: `
-                <div>
-                <div @click="toggle" class="tree-item">
-                    <span>{{ item.name }}</span>
-                    <span v-if="item.children && item.children.length" class="toggle"></span>
-                </div>
-                <ul v-if="isOpen">
-                    <tree-item v-for="child in item.children" :key="child.id" :item="child"></tree-item>
-                </ul>
-                </div>
-            `,
-            props: ['item'],
-            data() {
-                return {
-                isOpen: false
-                }
-            },
-            methods: {
-                toggle() {
-                this.isOpen = !this.isOpen;
-                }
-            }
-        });
-
+        
         const str = `12345678924187967432017594852984152018941598520498602498718413174981074710180974891607418091074`;
         const encoder = new TextEncoder();
         const encodedArray = encoder.encode(str, {});
         const deflated = UZIP.deflateRaw(encodedArray, {level:9});
         const detail = inflate_detail(deflated);
         console.log(detail);
-
+        
         const decoder = new TextDecoder();
         const decodedString = decoder.decode(detail.buf);
         console.log(decodedString);
+        new Vue({
+            el: '#app',
+            data: {
+                detail: detail
+            },
+            computed: {
+
+            },
+            created() {
+
+            },
+            methods: {
+
+            }
+        });
     </script>
 </body>
 </html>
