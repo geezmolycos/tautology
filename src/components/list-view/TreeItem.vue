@@ -25,4 +25,7 @@ function toggle() {
   .tree-item-wrapper {
     user-select: none;
   }
+  .tree-item-inner {
+    padding-left: 1em;
+  }
 </style>
