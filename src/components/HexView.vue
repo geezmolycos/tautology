@@ -3,39 +3,48 @@ import { ref, computed } from 'vue'
 const props = defineProps({
   data: { default: new ArrayBuffer(0), type: ArrayBuffer },
   columns: { default: 16, type: Number },
-  rows: { default: 16, type: Number }
+  rows: { default: 8, type: Number }
 })
 const startPos = ref(0);
 const selStart = ref(0);
-const selEnd = ref(0);
+const selEnd = ref(140);
+
+const dataLength = computed(() => {
+  return props.data.byteLength;
+})
 
 const offsetLength = computed(() => {
-  if (props.data.byteLength < 0x10000) {
+  if (dataLength.value < 0x10000) {
     return 4;
   }
-  if (props.data.byteLength < 0x1000000) {
+  if (dataLength.value < 0x1000000) {
     return 6;
   }
   return 8;
 });
 
+function formatOffset(offset) {
+  return offset.toString(16).toUpperCase().padStart(offsetLength.value, "0");
+}
+
 const hexHeader = [...Array(16).keys()].map((i) => i.toString(16).toUpperCase().padStart(2));
 
-function format_data(arraybuffer) {
+function formatData(arraybuffer, offset) {
   let array = Array.from(new Uint8Array(arraybuffer));
-  array = array.map((it) => ({
+  array = array.map((it, i) => ({
     hex: it.toString(16).toUpperCase().padStart(2, "0"),
     ascii: (0x20 <= it && it <= 0x7e) ? String.fromCharCode(it) : '.',
+    offset: offset + i,
   }));
   return array;
 }
 const dataLines = computed(() => {
   const l = [];
   let i, k;
-  for (i=0, k=startPos.value; i<props.rows && k+props.columns<props.data.byteLength; i++, k+=props.columns) {
-    l.push(format_data(props.data.slice(k, k+props.columns)));
+  for (i=0, k=startPos.value; i<props.rows && k+props.columns<dataLength.value; i++, k+=props.columns) {
+    l.push(formatData(props.data.slice(k, k+props.columns), k));
   }
-  const last = format_data(props.data.slice(k, k+props.columns));
+  const last = formatData(props.data.slice(k, k+props.columns), k);
   while (last.length < props.columns) {
     last.push({
       hex: "  ",
@@ -56,44 +65,177 @@ const offsets = computed(() => {
     if (line.length == 0) {
       o.push(" ");
     } else {
-      o.push(k.toString(16).toUpperCase().padStart(offsetLength.value, "0"));
+      o.push(formatOffset(k) + ':');
       k += line.length;
     }
   }
   return o;
 });
 
+function selectionBackground(offset) {
+  const bitOffsetBegin = offset * 8;
+  const bitOffsetEnd = bitOffsetBegin + 8;
+  if (selEnd.value <= bitOffsetBegin || bitOffsetEnd <= selStart.value) {
+    // not contained
+    return null;
+  }
+  if (selStart.value <= bitOffsetBegin && bitOffsetEnd <= selEnd.value) {
+    // fully contained
+    return 'var(--color-selected)';
+  }
+  // overlapped
+  let startRatio = (selStart.value - bitOffsetBegin) / 8;
+  startRatio = Math.max(0, startRatio);
+  let endRatio = (selEnd.value - bitOffsetBegin) / 8;
+  endRatio = Math.min(1, endRatio);
+  return `linear-gradient(90deg,
+    transparent ${startRatio * 100}%,
+    var(--color-selected) ${startRatio * 100}%,
+    var(--color-selected) ${endRatio * 100}%,
+    transparent ${endRatio * 100}%)`;
+}
+
+function uint8ArrayToBinary(arr) {
+  let binary = '';
+  for (let i = 0; i < arr.length; i++) {
+    binary += arr[i].toString(2).padStart(8, '0');
+  }
+  return binary;
+}
+
+function addSpaces(string, initial, interval, tail) {
+  let result = '';
+  let startIndex = initial;
+  let chunk = string.slice(0, initial);
+  result += chunk;
+
+  while (tail ? (startIndex <= string.length) : (startIndex < string.length)) {
+    let chunk = string.slice(startIndex, startIndex + interval);
+    result += ' ' + chunk;
+    startIndex += interval;
+  }
+  return result;
+}
+
+function getRangeBinary(data, showStart, showEnd, selStart, selEnd) {
+  const showData = new Uint8Array(data, showStart, showEnd - showStart);
+  const binary = uint8ArrayToBinary(showData);
+  const selectionStartBits = selStart - showStart * 8;
+  const selectionEndBits = selEnd - showStart * 8;
+  const binaryBefore = binary.slice(0, selectionStartBits);
+  const binarySelected = binary.slice(selectionStartBits, selectionEndBits);
+  const binaryAfter = binary.slice(selectionEndBits);
+  return [
+    addSpaces(binaryBefore, 8, 8, true),
+    addSpaces(binarySelected, (8 - selectionStartBits % 8), 8),
+    addSpaces(binaryAfter, (8 - selectionEndBits % 8) % 8, 8),
+  ];
+}
+
+const selectionBinary = computed(() => {
+  const showStart = Math.max(0, Math.floor(selStart.value / 8) - 1);
+  const showEnd = Math.min(dataLength.value, Math.ceil(selEnd.value / 8) + 1);
+  if (showEnd - showStart <= 4) {
+    return {
+      firstLabel: formatOffset(showStart) + ':',
+      firstLine: getRangeBinary(props.data, showStart, showEnd, selStart.value, selEnd.value)
+    };
+  } else if (showEnd - showStart <= 8) {
+    const firstLine = getRangeBinary(props.data, showStart, showStart + 4, selStart.value, (showStart + 4) * 8);
+    const secondLine = getRangeBinary(props.data, showStart + 4, showEnd, (showStart + 4) * 8, selEnd.value);
+    return {
+      firstLabel: formatOffset(showStart) + ':',
+      secondLabel: formatOffset(showStart + 4) + ':',
+      firstLine: firstLine,
+      secondLine: secondLine,
+    };
+  } else {
+    const firstLine = getRangeBinary(props.data, showStart, showStart + 4, selStart.value, (showStart + 4) * 8);
+    const secondLine = getRangeBinary(props.data, showEnd - 4, showEnd, (showEnd - 4) * 8, selEnd.value);
+    return {
+      firstLabel: formatOffset(showStart) + ':',
+      secondLabel: '...',
+      middleLabel: '...',
+      finalLabel: ':' + formatOffset(showEnd + 4),
+      firstLine: firstLine,
+      secondLine: secondLine,
+    };
+  }
+});
+
+const rangeUnit = ref('bit');
+const rangeBase = ref(16);
 
 </script>
 
 <template>
   <div class="hex-view">
+    <!--row 1-->
     <div class="offset header">Addr</div>
     <div class="hex header line">
       <div class="hex-item" v-for="(item, index) in hexHeader" :key="index">{{ item }}</div>
     </div>
     <div class="ascii header line">ASCII</div>
+    <!--row 2-->
     <div class="offset lines">
       <div class="offset-item" v-for="(offset, index) in offsets" :key="index">{{ offset }}</div>
     </div>
     <div class="hex lines">
       <div class="line" v-for="(line, index) in dataLines" :key="index">
-        <div class="hex-item" v-for="(item, index) in line" :key="index">{{ item.hex }}</div>
+        <div class="hex-item"
+        :style="{background: selectionBackground(item.offset)}"
+        v-for="(item, lineindex) in line" :key="lineindex">{{ item.hex }}</div>
       </div>
     </div>
     <div class="ascii lines">
       <div class="line" v-for="(line, index) in dataLines" :key="index">
-        <div class="ascii-item" v-for="(item, index) in line" :key="index">{{ item.ascii }}</div>
+        <div class="ascii-item"
+        :style="{background: selectionBackground(item.offset)}"
+        v-for="(item, lineindex) in line" :key="lineindex">{{ item.ascii }}</div>
       </div>
     </div>
-    <div class="hex-view-footer">
-
+    <!--row 3-->
+    <div class="offset header footer">Addr</div>
+    <div class="hex header line footer">
+      <div class="binary-selection"><span>0------7 8------F 10----17 18----1F</span></div>
+    </div>
+    <div class="ascii header footer">Range
+      <span :class="{clickable: true, active: rangeUnit == 'byte'}" @click="rangeUnit = {bit: 'byte', byte: 'bit'}[rangeUnit]">Byte</span><!--
+      -->&nbsp;<span :class="{clickable: true, active: rangeBase == 10}" @click="rangeBase = {10: 16, 16: 10}[rangeBase]">Dec</span>
+    </div>
+    <!--row 4-->
+    <div class="label">{{ selectionBinary.firstLabel }}</div>
+    <div class="binary-selection" v-if="selectionBinary.firstLine">
+      {{ selectionBinary.firstLine[0] }}<span class="selected">{{ selectionBinary.firstLine[1] }}</span>{{ selectionBinary.firstLine[2] }}<!--
+      --><span v-if="selectionBinary.middleLabel" :class="{'right-label': true, 'selected': selectionBinary.middleLabel == '...'}">{{ selectionBinary.middleLabel }}</span>
+    </div>
+    <div class="ascii">
+      <div v-if="rangeUnit == 'bit'">{{ rangeBase == 16 ? '0x' : '' }}{{ selStart.toString(rangeBase).toUpperCase() }}</div>
+      <div v-else-if="rangeUnit == 'byte'">{{ rangeBase == 16 ? '0x' : '' }}{{ Math.floor(selStart / 8).toString(rangeBase).toUpperCase() }}:{{ (selStart % 8).toString() }}</div>
+    </div>
+    <!--row 5-->
+    <div class="label" v-if="selectionBinary.secondLabel" :class="{'label': true, 'selected': selectionBinary.secondLabel == '...'}">{{ selectionBinary.secondLabel }}</div>
+    <div class="binary-selection" v-if="selectionBinary.secondLine">
+      {{ selectionBinary.secondLine[0] }}<span class="selected">{{ selectionBinary.secondLine[1] }}</span>{{ selectionBinary.secondLine[2] }}<!--
+      --><span v-if="selectionBinary.finalLabel" class="right-label">{{ selectionBinary.finalLabel }}</span>
+    </div>
+    <div class="ascii">
+      <div v-if="rangeUnit == 'bit'">{{ rangeBase == 16 ? '0x' : '' }}{{ selEnd.toString(rangeBase).toUpperCase() }}</div>
+      <div v-else-if="rangeUnit == 'byte'">{{ rangeBase == 16 ? '0x' : '' }}{{ Math.floor(selEnd / 8).toString(rangeBase).toUpperCase() }}:{{ (selEnd % 8).toString() }}</div>
     </div>
   </div>
 </template>
 
 <style scoped>
   .hex-view {
+    --color-selected: #66ccff;
+    --color-clickable: var(--color-background);
+    --color-clickable-accent: #996633;
+    @media (prefers-color-scheme: dark) {
+      --color-selected: #336699;
+      --color-clickable: var(--color-background);
+      --color-clickable-accent: #ffcc66;
+    }
     font-family: monospace;
     white-space: pre-wrap;
     display: grid;
@@ -104,7 +246,10 @@ const offsets = computed(() => {
     margin-bottom: 0.2em;
     background-color: var(--color-background-soft);
   }
-  
+  .footer {
+    border-top: 1px solid;
+  }
+
   .offset {
     padding-left: 0.5em;
     padding-right: 1em;
@@ -129,4 +274,34 @@ const offsets = computed(() => {
     padding-left: 1em;
     padding-right: 0.5em;
   }
+
+  .selected {
+    background: var(--color-selected);
+  }
+
+  .label {
+    padding-left: 0.5em;
+    padding-right: 1em;
+  }
+  .right-label {
+    padding-left: 1em;
+    padding-right: 0.5em;
+  }
+
+  .binary-selection :first-child {
+    padding-left: 0.25em;
+  }
+  .binary-selection .selected {
+    display: inline-block;
+  }
+
+  .clickable {
+    display: inline-block;
+    color: var(--color-clickable-accent);
+  }
+  .clickable.active {
+    color: var(--color-clickable);
+    background: var(--color-clickable-accent);
+  }
+  
 </style>
