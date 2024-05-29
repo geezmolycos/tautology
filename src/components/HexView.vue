@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 const props = defineProps({
-  data: { default: new ArrayBuffer(0), type: ArrayBuffer },
+  data: { default: new Uint8Array(0), type: Uint8Array },
   columns: { default: 16, type: Number },
   rows: { default: 8, type: Number }
 })
@@ -29,8 +29,8 @@ function formatOffset(offset) {
 
 const hexHeader = [...Array(16).keys()].map((i) => i.toString(16).toUpperCase().padStart(2));
 
-function formatData(arraybuffer, offset) {
-  let array = Array.from(new Uint8Array(arraybuffer));
+function formatData(u8array, offset) {
+  let array = Array.from(u8array);
   array = array.map((it, i) => ({
     hex: it.toString(16).toUpperCase().padStart(2, "0"),
     ascii: (0x20 <= it && it <= 0x7e) ? String.fromCharCode(it) : '.',
@@ -118,7 +118,7 @@ function addSpaces(string, initial, interval, tail) {
 }
 
 function getRangeBinary(data, showStart, showEnd, selStart, selEnd) {
-  const showData = new Uint8Array(data, showStart, showEnd - showStart);
+  const showData = data.subarray(showStart, showEnd);
   const binary = uint8ArrayToBinary(showData);
   const selectionStartBits = selStart - showStart * 8;
   const selectionEndBits = selEnd - showStart * 8;
@@ -163,8 +163,34 @@ const selectionBinary = computed(() => {
   }
 });
 
-const rangeUnit = ref('bit');
+const rangeUnit = ref('byte');
 const rangeBase = ref(16);
+
+function move(lines) {
+  const bytes = props.columns * lines;
+  const target = startPos.value + bytes;
+  if (target > dataLength.value) {
+    startPos.value = Math.floor(dataLength.value / props.columns) * props.columns;
+  } else if (target < 0) {
+    startPos.value = 0;
+  } else {
+    startPos.value = target;
+  }
+}
+
+function highlight(start, end, seek) {
+  if (seek) {
+    const displayStart = startPos.value;
+    const diffLines = Math.floor((start - displayStart) / props.columns);
+    if (diffLines < 0 || diffLines > props.rows) {
+      move(diffLines);
+    }
+  }
+  selStart.value = start;
+  selEnd.value = end;
+}
+
+defineExpose({highlight});
 
 </script>
 
@@ -175,7 +201,16 @@ const rangeBase = ref(16);
     <div class="hex header line">
       <div class="hex-item" v-for="(item, index) in hexHeader" :key="index">{{ item }}</div>
     </div>
-    <div class="ascii header line">ASCII</div>
+    <div class="ascii header line">ASCII
+      <span class="clickable" @click="move(-4)">&lt;</span>
+      <span class="clickable" @click="move(+4)">&gt;</span>
+      <span class="clickable" @click="move(-16)">(</span>
+      <span class="clickable" @click="move(+16)">)</span>
+      <span class="clickable" @click="move(-256)">[</span>
+      <span class="clickable" @click="move(+256)">]</span>
+      <span class="clickable" @click="move(-4096)">{</span>
+      <span class="clickable" @click="move(+4096)">}</span>
+    </div>
     <!--row 2-->
     <div class="offset lines">
       <div class="offset-item" v-for="(offset, index) in offsets" :key="index">{{ offset }}</div>
@@ -195,7 +230,7 @@ const rangeBase = ref(16);
       </div>
     </div>
     <!--row 3-->
-    <div class="offset header footer">Addr</div>
+    <div class="offset header footer">Bin</div>
     <div class="hex header line footer">
       <div class="binary-selection"><span>0------7 8------F 10----17 18----1F</span></div>
     </div>
@@ -209,16 +244,19 @@ const rangeBase = ref(16);
       {{ selectionBinary.firstLine[0] }}<span class="selected">{{ selectionBinary.firstLine[1] }}</span>{{ selectionBinary.firstLine[2] }}<!--
       --><span v-if="selectionBinary.middleLabel" :class="{'right-label': true, 'selected': selectionBinary.middleLabel == '...'}">{{ selectionBinary.middleLabel }}</span>
     </div>
+    <div class="binary-selection" v-else></div>
+    <div class="label" style="grid-row: 5;" v-if="selectionBinary.secondLabel" :class="{'label': true, 'selected': selectionBinary.secondLabel == '...'}">{{ selectionBinary.secondLabel }}</div>
+    <div class="label" style="grid-row: 5;" v-else></div>
+    <div class="binary-selection" style="grid-row: 5;" v-if="selectionBinary.secondLine">
+      {{ selectionBinary.secondLine[0] }}<span class="selected">{{ selectionBinary.secondLine[1] }}</span>{{ selectionBinary.secondLine[2] }}<!--
+      --><span v-if="selectionBinary.finalLabel" class="right-label">{{ selectionBinary.finalLabel }}</span>
+    </div>
+    <div class="binary-selection" style="grid-row: 5;" v-else></div>
     <div class="ascii">
       <div v-if="rangeUnit == 'bit'">{{ rangeBase == 16 ? '0x' : '' }}{{ selStart.toString(rangeBase).toUpperCase() }}</div>
       <div v-else-if="rangeUnit == 'byte'">{{ rangeBase == 16 ? '0x' : '' }}{{ Math.floor(selStart / 8).toString(rangeBase).toUpperCase() }}:{{ (selStart % 8).toString() }}</div>
     </div>
     <!--row 5-->
-    <div class="label" v-if="selectionBinary.secondLabel" :class="{'label': true, 'selected': selectionBinary.secondLabel == '...'}">{{ selectionBinary.secondLabel }}</div>
-    <div class="binary-selection" v-if="selectionBinary.secondLine">
-      {{ selectionBinary.secondLine[0] }}<span class="selected">{{ selectionBinary.secondLine[1] }}</span>{{ selectionBinary.secondLine[2] }}<!--
-      --><span v-if="selectionBinary.finalLabel" class="right-label">{{ selectionBinary.finalLabel }}</span>
-    </div>
     <div class="ascii">
       <div v-if="rangeUnit == 'bit'">{{ rangeBase == 16 ? '0x' : '' }}{{ selEnd.toString(rangeBase).toUpperCase() }}</div>
       <div v-else-if="rangeUnit == 'byte'">{{ rangeBase == 16 ? '0x' : '' }}{{ Math.floor(selEnd / 8).toString(rangeBase).toUpperCase() }}:{{ (selEnd % 8).toString() }}</div>
@@ -227,81 +265,92 @@ const rangeBase = ref(16);
 </template>
 
 <style scoped>
-  .hex-view {
-    --color-selected: #66ccff;
+.hex-view {
+  --color-selected: #66ccff;
+  --color-clickable: var(--color-background);
+  --color-clickable-accent: #996633;
+  @media (prefers-color-scheme: dark) {
+    --color-selected: #336699;
     --color-clickable: var(--color-background);
-    --color-clickable-accent: #996633;
-    @media (prefers-color-scheme: dark) {
-      --color-selected: #336699;
-      --color-clickable: var(--color-background);
-      --color-clickable-accent: #ffcc66;
-    }
-    font-family: monospace;
-    white-space: pre-wrap;
-    display: grid;
-    grid-template-columns: repeat(3, min-content);
+    --color-clickable-accent: #ffcc66;
   }
-  .header {
-    border-bottom: 1px solid;
-    margin-bottom: 0.2em;
-    background-color: var(--color-background-soft);
-  }
-  .footer {
-    border-top: 1px solid;
-  }
+  font-family: monospace;
+  white-space: pre-wrap;
+  display: grid;
+  grid-template-columns: repeat(3, min-content);
+}
+.header {
+  border-bottom: 1px solid;
+  margin-bottom: 0.2em;
+  background-color: var(--color-background-soft);
+  user-select: none;
+}
+.footer {
+  border-top: 1px solid;
+}
 
-  .offset {
-    padding-left: 0.5em;
-    padding-right: 1em;
-  }
+.offset {
+  padding-left: 0.5em;
+  padding-right: 1em;
+  user-select: none;
+}
 
-  .hex {
-    display: flex;
-    flex-direction: column;
-  }
+.hex {
+  display: flex;
+  flex-direction: column;
+}
 
-  .line {
-    display: flex;
-    flex-direction: row;
-  }
+.line {
+  display: flex;
+  flex-direction: row;
+}
 
-  .hex-item {
-    padding-left: 0.25em;
-    padding-right: 0.25em;
-  }
+.hex-item {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+  white-space: pre;
+}
 
-  .ascii {
-    padding-left: 1em;
-    padding-right: 0.5em;
-  }
+.ascii {
+  padding-left: 1em;
+  padding-right: 0.5em;
+}
 
-  .selected {
-    background: var(--color-selected);
-  }
+.ascii-item {
+  white-space: pre;
+}
 
-  .label {
-    padding-left: 0.5em;
-    padding-right: 1em;
-  }
-  .right-label {
-    padding-left: 1em;
-    padding-right: 0.5em;
-  }
+.selected {
+  background: var(--color-selected);
+}
 
-  .binary-selection :first-child {
-    padding-left: 0.25em;
-  }
-  .binary-selection .selected {
-    display: inline-block;
-  }
+.label {
+  padding-left: 0.5em;
+  padding-right: 1em;
+  user-select: none;
+}
+.right-label {
+  padding-left: 1em;
+  padding-right: 0.5em;
+  user-select: none;
+}
 
-  .clickable {
-    display: inline-block;
-    color: var(--color-clickable-accent);
-  }
-  .clickable.active {
-    color: var(--color-clickable);
-    background: var(--color-clickable-accent);
-  }
-  
+.binary-selection :first-child {
+  padding-left: 0.25em;
+}
+.binary-selection .selected {
+  display: inline-block;
+}
+
+.clickable {
+  display: inline-block;
+  color: var(--color-clickable-accent);
+  user-select: none;
+  cursor: pointer;
+}
+.clickable.active {
+  color: var(--color-clickable);
+  background: var(--color-clickable-accent);
+}
+
 </style>
