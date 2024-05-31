@@ -3,7 +3,8 @@ import { ref, computed } from 'vue'
 const props = defineProps({
   data: { default: new Uint8Array(0), type: Uint8Array },
   columns: { default: 16, type: Number },
-  rows: { default: 8, type: Number }
+  rows: { default: 8, type: Number },
+  hideBinary: { type: Boolean },
 })
 const startPos = ref(0);
 const selStart = ref(0);
@@ -122,6 +123,16 @@ function getRangeBinary(data, showStart, showEnd, selStart, selEnd) {
   const binary = uint8ArrayToBinary(showData);
   const selectionStartBits = selStart - showStart * 8;
   const selectionEndBits = selEnd - showStart * 8;
+  if (selectionEndBits <= 0) {
+    return [
+      '', '', addSpaces(binary, 8, 8)
+    ];
+  }
+  if (binary.length <= selectionStartBits) {
+    return [
+      addSpaces(binary, 8, 8), '', ''
+    ];
+  }
   const binaryBefore = binary.slice(0, selectionStartBits);
   const binarySelected = binary.slice(selectionStartBits, selectionEndBits);
   const binaryAfter = binary.slice(selectionEndBits);
@@ -141,8 +152,8 @@ const selectionBinary = computed(() => {
       firstLine: getRangeBinary(props.data, showStart, showEnd, selStart.value, selEnd.value)
     };
   } else if (showEnd - showStart <= 8) {
-    const firstLine = getRangeBinary(props.data, showStart, showStart + 4, selStart.value, (showStart + 4) * 8);
-    const secondLine = getRangeBinary(props.data, showStart + 4, showEnd, (showStart + 4) * 8, selEnd.value);
+    const firstLine = getRangeBinary(props.data, showStart, showStart + 4, selStart.value, selEnd.value);
+    const secondLine = getRangeBinary(props.data, showStart + 4, showEnd, selStart.value, selEnd.value);
     return {
       firstLabel: formatOffset(showStart) + ':',
       secondLabel: formatOffset(showStart + 4) + ':',
@@ -150,8 +161,8 @@ const selectionBinary = computed(() => {
       secondLine: secondLine,
     };
   } else {
-    const firstLine = getRangeBinary(props.data, showStart, showStart + 4, selStart.value, (showStart + 4) * 8);
-    const secondLine = getRangeBinary(props.data, showEnd - 4, showEnd, (showEnd - 4) * 8, selEnd.value);
+    const firstLine = getRangeBinary(props.data, showStart, showStart + 4, selStart.value, selEnd.value);
+    const secondLine = getRangeBinary(props.data, showEnd - 4, showEnd, selStart.value, selEnd.value);
     return {
       firstLabel: formatOffset(showStart) + ':',
       secondLabel: '...',
@@ -197,7 +208,7 @@ defineExpose({highlight});
 <template>
   <div class="hex-view">
     <!--row 1-->
-    <div class="offset header">Addr</div>
+    <div class="offset header">{{ formatOffset(dataLength) }}</div>
     <div class="hex header line">
       <div class="hex-item" v-for="(item, index) in hexHeader" :key="index">{{ item }}</div>
     </div>
@@ -230,6 +241,7 @@ defineExpose({highlight});
       </div>
     </div>
     <!--row 3-->
+    <template v-if="!hideBinary">
     <div class="offset header footer">Bin</div>
     <div class="hex header line footer">
       <div class="binary-selection"><span>0------7 8------F 10----17 18----1F</span></div>
@@ -261,19 +273,12 @@ defineExpose({highlight});
       <div v-if="rangeUnit == 'bit'">{{ rangeBase == 16 ? '0x' : '' }}{{ selEnd.toString(rangeBase).toUpperCase() }}</div>
       <div v-else-if="rangeUnit == 'byte'">{{ rangeBase == 16 ? '0x' : '' }}{{ Math.floor(selEnd / 8).toString(rangeBase).toUpperCase() }}:{{ (selEnd % 8).toString() }}</div>
     </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .hex-view {
-  --color-selected: #66ccff;
-  --color-clickable: var(--color-background);
-  --color-clickable-accent: #996633;
-  @media (prefers-color-scheme: dark) {
-    --color-selected: #336699;
-    --color-clickable: var(--color-background);
-    --color-clickable-accent: #ffcc66;
-  }
   font-family: monospace;
   white-space: pre-wrap;
   display: grid;
@@ -320,10 +325,6 @@ defineExpose({highlight});
   white-space: pre;
 }
 
-.selected {
-  background: var(--color-selected);
-}
-
 .label {
   padding-left: 0.5em;
   padding-right: 1em;
@@ -340,17 +341,6 @@ defineExpose({highlight});
 }
 .binary-selection .selected {
   display: inline-block;
-}
-
-.clickable {
-  display: inline-block;
-  color: var(--color-clickable-accent);
-  user-select: none;
-  cursor: pointer;
-}
-.clickable.active {
-  color: var(--color-clickable);
-  background: var(--color-clickable-accent);
 }
 
 </style>

@@ -1,6 +1,10 @@
 <script setup>
-import { ref } from 'vue'
-const props = defineProps(['name', 'fullname', 'initialIsOpen'])
+import { ref } from 'vue';
+const props = defineProps({
+  initialIsOpen: {
+    type: Boolean
+  },
+});
 
 const isOpen = ref(props.initialIsOpen);
 
@@ -11,20 +15,17 @@ function toggle() {
 
 <template>
   <div class="tree-item-wrapper">
-    <div @click="toggle" class="tree-item">
-      <span>{{ isOpen ? "[-]" : "[+]"}}</span>
-      <span>{{ isOpen ? name : (fullname || name) }}</span>
+    <div @click.prevent="toggle" class="tree-item">
+      <span class="clickable">{{ isOpen ? "[-]" : "[+]"}}</span>
+      <slot name="summary"></slot>
     </div>
     <div class="tree-item-inner" v-if="isOpen">
-      <slot />
+      <slot></slot>
     </div>
   </div>
 </template>
 
 <style scoped>
-  .tree-item-wrapper {
-    user-select: none;
-  }
   .tree-item-inner {
     padding-left: 1em;
   }

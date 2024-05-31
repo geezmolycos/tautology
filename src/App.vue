@@ -2,11 +2,13 @@
 import ListView from './components/list-view/ListView.vue'
 import DeflateRoot from './components/list-view/DeflateRoot.vue'
 import HexView from './components/HexView.vue'
+import HuffmanTreeView from './components/HuffmanTreeView.vue'
 import { deflateRaw } from 'uzip'
 import { inflate_detail } from './inflate_detail.js'
 import { ref, watch } from 'vue'
 
-const str = `12345678924187967432017594852984152018941598520498602498718413174981074710180974891607418091074`;
+// const str = `12345678924187967432017594852984152018941598520498602498718413174981074710180974891607418091074`;
+const str = `123`;
 const encoder = new TextEncoder();
 const encodedArray = encoder.encode(str, {});
 const deflated = deflateRaw(encodedArray, {level:9});
@@ -18,22 +20,32 @@ const decodedString = decoder.decode(detail.buf);
 console.log(decodedString);
 const detailRef = ref(detail);
 
-const d = deflated;
-
 const hex = ref();
+const hexOut = ref();
 
-watch(hex, (newHex, oldHex) => {
-  newHex.highlight(1, 10, true);
-});
+function hlit2(begin, length, outBegin, outLength) {
+  hex.value.highlight(begin, begin+length);
+  if (outBegin !== undefined) {
+    hexOut.value.highlight(outBegin*8, (outBegin+outLength)*8, true);
+  } else {
+    hexOut.value.highlight(0, 0);
+  }
+}
 
 </script>
 
 <template>
   <div class="leftright">
     <ListView>
-      <DeflateRoot :detail="detailRef"></DeflateRoot>
+      <DeflateRoot :detail="detailRef" :hlit2="hlit2"></DeflateRoot>
+      <!-- <HuffmanTreeView :tree="detail.blocks[0].code_length_tree" :symbol-names="[]"></HuffmanTreeView> -->
     </ListView>
-    <HexView :data="d" ref="hex"></HexView>
+    <div>
+      <div>Deflated:</div>
+      <HexView :data="deflated" ref="hex" :rows="4"></HexView>
+      <div>Inflated:</div>
+      <HexView :data="detail.buf" ref="hexOut" hide-binary></HexView>
+    </div>
   </div>
 </template>
 
