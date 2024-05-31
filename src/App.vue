@@ -1,11 +1,11 @@
 <script setup>
-import ListView from './components/list-view/ListView.vue'
-import DeflateRoot from './components/list-view/DeflateRoot.vue'
-import HexView from './components/HexView.vue'
-import HuffmanTreeView from './components/HuffmanTreeView.vue'
-import { deflateRaw } from 'uzip'
-import { inflate_detail } from './inflate_detail.js'
-import { ref, watch } from 'vue'
+import ListView from './components/list-view/ListView.vue';
+import DeflateRoot from './components/list-view/DeflateRoot.vue';
+import HexView from './components/HexView.vue';
+import HuffmanTreeView from './components/HuffmanTreeView.vue';
+import { deflateRaw } from 'uzip';
+import { inflate_detail } from './inflate_detail.js';
+import { ref, watch } from 'vue';
 
 // const str = `12345678924187967432017594852984152018941598520498602498718413174981074710180974891607418091074`;
 const str = `123`;

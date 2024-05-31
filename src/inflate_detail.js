@@ -193,10 +193,10 @@ export function inflate_detail(data, buf) {
                 off=end;
                 //while(off!=end) {  buf[off]=buf[off++-dst];  }
             }
-            detail_block.length = pos - detail_block.begin;
-            detail_block.data_length = pos - detail_block.data_begin;
-            detail_block.out_length = off - detail_block.out_begin;
         }
+        detail_block.length = pos - detail_block.begin;
+        detail_block.data_length = pos - detail_block.data_begin;
+        detail_block.out_length = off - detail_block.out_begin;
         //console.log(off-ooff, (pos-opos)>>>3);
     }
     //console.log(UZIP.F.dst);

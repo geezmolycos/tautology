@@ -10,7 +10,7 @@ function formatOffset(bit) {
 </script>
 
 <template>
-  <span class="clickable" @click.stop.prevent="hlit2(begin, length, outBegin, outLength)">
-    {{ formatOffset(begin) }}+{{ formatOffset(length) }}<template v-if="outBegin !== undefined">-&gt;{{ formatOffset(outBegin) }}+{{ formatOffset(outLength) }}</template>
+  <span class="highlight" @click.stop.prevent="hlit2(begin, length, outBegin, outLength)">
+    <slot>{{ formatOffset(begin) }}+{{ formatOffset(length) }}<template v-if="outBegin !== undefined">-&gt;{{ formatOffset(outBegin) }}+{{ formatOffset(outLength) }}</template></slot>
   </span>
 </template>

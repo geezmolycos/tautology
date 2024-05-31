@@ -11,10 +11,12 @@
   --color-selected: #66ccff;
   --color-clickable: var(--color-background);
   --color-clickable-accent: #996633;
+  --color-highlight: #336699;
   @media (prefers-color-scheme: dark) {
     --color-selected: #336699;
     --color-clickable: var(--color-background);
     --color-clickable-accent: #ffcc66;
+    --color-highlight: #66ccff;
   }
 }
 
@@ -31,4 +33,12 @@
 .clickable.active {
   color: var(--color-clickable);
   background: var(--color-clickable-accent);
+}
+
+.highlight {
+  display: inline-block;
+  font-size: 0.8em;
+  color: var(--color-highlight);
+  user-select: none;
+  cursor: pointer;
 }
