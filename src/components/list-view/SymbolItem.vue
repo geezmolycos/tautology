@@ -11,6 +11,7 @@ const display = computed(() => {
     hex: it.toString(16).toUpperCase().padStart(2, "0"),
     ascii: (0x20 <= it && it <= 0x7e) ? String.fromCharCode(it) : '.',
     has_ascii: (0x20 <= it && it <= 0x7e),
+    raw: props.symbol.raw.toString(2).padStart(props.symbol.size, "0")
   };
 })
 </script>
@@ -22,7 +23,7 @@ const display = computed(() => {
       <span v-if="display.has_ascii" class="ascii">{{ display.ascii }}</span>
       <span v-else class="hex">{{ display.hex }}</span>
     </HighlightTag>
-    <template v-slot:tooltip>Hex: 0x{{ display.hex }}</template>
+    <template v-slot:tooltip>{{ display.raw }} -> 0x{{ display.hex }}</template>
   </HasTooltip>
   </div>
   <div v-else-if="symbol.type == 'end'">

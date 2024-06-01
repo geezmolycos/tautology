@@ -8,7 +8,7 @@ import { inflate_detail } from './inflate_detail.js';
 import { ref, watch } from 'vue';
 
 // const str = `12345678924187967432017594852984152018941598520498602498718413174981074710180974891607418091074`;
-const str = `123`;
+const str = `12345434t3w4edrut8590oi5tu5`;
 const encoder = new TextEncoder();
 const encodedArray = encoder.encode(str, {});
 const deflated = deflateRaw(encodedArray, {level:9});
@@ -42,7 +42,7 @@ function hlit2(begin, length, outBegin, outLength) {
     </ListView>
     <div>
       <div>Deflated:</div>
-      <HexView :data="deflated" ref="hex" :rows="4"></HexView>
+      <HexView :data="deflated" ref="hex" :rows="4" sel-little-endian flipped></HexView>
       <div>Inflated:</div>
       <HexView :data="detail.buf" ref="hexOut" hide-binary></HexView>
     </div>
