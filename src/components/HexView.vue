@@ -177,9 +177,11 @@ function move(lines) {
 function highlight(start, end, seek) {
   if (seek) {
     const displayStart = startPos.value;
-    const diffLines = Math.floor((start - displayStart) / props.columns);
-    if (diffLines < 0 || diffLines > props.rows) {
+    const diffLines = Math.floor((start / 8 - displayStart) / props.columns);
+    if (diffLines < 0) {
       move(diffLines);
+    } else if (diffLines > props.rows) {
+      move(diffLines - props.rows);
     }
   }
   selStart.value = start;

@@ -1,6 +1,6 @@
 <script setup>
 import TreeItem from './TreeItem.vue';
-import HighlightTag from './HighlightTag.vue';
+import HighlightTag from '../HighlightTag.vue';
 import Block from './DeflateBlock.vue';
 import { provide } from 'vue';
 const props = defineProps(['detail', 'hlit2']);

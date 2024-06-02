@@ -19,7 +19,7 @@ function toggle() {
       <span class="clickable">{{ isOpen ? "[-]" : "[+]"}}</span>
       <slot name="summary"></slot>
     </div>
-    <div class="tree-item-inner" v-if="isOpen">
+    <div class="tree-item-inner" v-show="isOpen">
       <slot></slot>
     </div>
   </div>

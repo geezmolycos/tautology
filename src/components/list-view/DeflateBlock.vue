@@ -1,6 +1,6 @@
 <script setup>
 import TreeItem from './TreeItem.vue';
-import HighlightTag from './HighlightTag.vue';
+import HighlightTag from '../HighlightTag.vue';
 import { computed } from 'vue';
 import SymbolList from './SymbolList.vue';
 const props = defineProps(['blockDetail']);
@@ -27,6 +27,9 @@ const typeName = computed(() => {
       <div>data: <HighlightTag :begin="blockDetail.data_begin" :length="blockDetail.data_length" :out-begin="blockDetail.out_begin" :out-length="blockDetail.out_length"></HighlightTag></div>
     </template>
     <template v-else-if="blockDetail.BTYPE == 1">
+      <SymbolList :symbols="blockDetail.symbols" :begin="blockDetail.data_begin" :length="blockDetail.data_length" :out-begin="blockDetail.out_begin" :out-length="blockDetail.out_length"></SymbolList>
+    </template>
+    <template v-else-if="blockDetail.BTYPE == 2">
       <SymbolList :symbols="blockDetail.symbols" :begin="blockDetail.data_begin" :length="blockDetail.data_length" :out-begin="blockDetail.out_begin" :out-length="blockDetail.out_length"></SymbolList>
     </template>
   </TreeItem>

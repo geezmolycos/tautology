@@ -176,6 +176,7 @@ export function inflate_detail(data, buf) {
                 symbol.distance_raw = bitsE(data, pos, dcode & 15);
                 pos += dcode&15;
                 var dlit = dcode>>>4;
+                symbol.distance_value = dlit;
                 symbol.distance_size = dcode & 15;
                 var dbs = U.ddef[dlit];
                 symbol.distance_base_value = (dbs>>>4);

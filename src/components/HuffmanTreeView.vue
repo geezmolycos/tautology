@@ -15,12 +15,12 @@ function binaryTreeFromArray(arr, symbolNames) {
         if (j == 0) {
           currentNode.value = '*';
         } else {
-          currentNode.value = code.slice(0, j);
+          currentNode.value = code.slice(0, j).split('').reverse().join('');
         }
       }
       currentNode = currentNode[code[j]];
     }
-    currentNode.value = code + ' ' + (symbolNames[i / 2] || (i / 2).toString());
+    currentNode.value = code.split('').reverse().join('') + ' ' + (symbolNames[i / 2] || (i / 2).toString());
   }
   return convertTreeToObject(tree);
 }
