@@ -1,45 +1,123 @@
 <script setup>
-import HuffmanTreeView from './HuffmanTreeView.vue';
 import HasTooltip from './HasTooltip.vue';
-import { ref } from 'vue';
-const props = defineProps(['huffmanAttrs']);
+import { ref, computed, watch, onMounted } from 'vue';
+const props = defineProps(['tree', 'symbolNames']);
 
-const treeHTML = ref();
-const treeScale = ref(1);
-const minimapWrapper = ref();
+const itemCount = computed(() => {
+  return props.tree.filter((e, i) => i % 2 == 1).map((e) => e != 0 ? 1 : 0).reduce((a, b) => a + b);
+});
 
-function updated(vnode) {
-  console.log('updated', vnode);
-  const element = vnode.el;
-  const { width: cw, height: ch } = element.getBoundingClientRect();
-  const { width: ww, height: wh } = minimapWrapper.value.getBoundingClientRect();
-  const scale = Math.min(ww / cw, wh / ch);
-  treeScale.value = scale;
-  treeHTML.value = element.outerHTML;
+// tree format is [code, length, code, length, ...]
+// for a symbol, tree[symbol*2] is code, tree[symbol*2+1] is length
+function binaryTreeFromArray(arr, symbolNames) {
+  const tree = {};
+  for (let i = 0; i < arr.length; i += 2) {
+    const code = arr[i].toString(2).padStart(arr[i + 1], '0');
+    let currentNode = tree;
+    for (let j = 0; j < code.length; j++) {
+      if (!currentNode[code[j]]) {
+        currentNode[code[j]] = {};
+        if (j == 0) {
+          currentNode.value = '*';
+        } else {
+          currentNode.value = code.slice(0, j).split('').reverse().join('');
+        }
+      }
+      currentNode = currentNode[code[j]];
+    }
+    currentNode.value = code.split('').reverse().join('') + ' ' + (symbolNames[i / 2] || (i / 2).toString());
+  }
+  return convertTreeToObject(tree);
 }
+
+function convertTreeToObject(tree) {
+  if (!tree) return null;
+  const children = [];
+  if (tree['0']) { children.push(convertTreeToObject(tree['0'])); }
+  if (tree['1']) { children.push(convertTreeToObject(tree['1'])); }
+  return window.drawTree2Node(tree.value, children);
+}
+
+const treeToDraw = computed(() => {
+  return binaryTreeFromArray(props.tree, props.symbolNames);
+});
+
+const drawTree2 = window.drawTree2;
+
+const treeText = computed(() => {
+  return drawTree2(false)(true)(treeToDraw.value);
+});
+
+const minimapHeight = 96;
+const minimapCharDrawMinHeight = 8;
+const minimapCharRatio = 0.5;
+const minimapCharDrawMinWidth = minimapCharDrawMinHeight * minimapCharRatio;
+
+const minimap = ref();
+
+function update_minimap(str) {
+  const canvas = minimap.value;
+  // Set the canvas dimensions based on the string
+  const lines = str.split('\n');
+  const rows = lines.length;
+  const cols = Math.max(...lines.map(line => line.length));
+  const charY = minimapHeight / rows;
+  const charX = charY * minimapCharRatio;
+  const charW = Math.max(minimapCharDrawMinWidth, charX);
+  const charH = Math.max(minimapCharDrawMinHeight, charY);
+  const bgColor = getComputedStyle(canvas).getPropertyValue("--color-background");
+  const fgColor = getComputedStyle(canvas).getPropertyValue("--color-text");
+  
+  const minimapWidth = Math.floor(charX * cols);
+  canvas.width = minimapWidth;
+  canvas.height = minimapHeight;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = 'black';
+  for (const [row, line] of lines.entries()) {
+    for (const [col, char] of line.split("").entries()) {
+      const y = row * charY;
+      const x = col * charX;
+      if (char === ' ') {
+        ctx.fillStyle = bgColor;
+      } else {
+        ctx.fillStyle = fgColor;
+      }
+      ctx.fillRect(x, y, charW, charH);
+    }
+  }
+}
+
+watch(treeText, (newValue, oldValue) => {
+  update_minimap(newValue);
+});
+
+onMounted(() => {
+  update_minimap(treeText.value);
+});
 
 </script>
 
 <template>
   <HasTooltip>
-    minimap:
-    <div class="minimap-wrapper" ref="minimapWrapper">
-      <div class="minimap-container" :style="{transform: `scale(${treeScale}, ${treeScale})`}" v-html="treeHTML" ref="huffContainer"></div>
+    <div class="container">
+      <div style="padding-right: 0.5em;">{{ itemCount }} symbols</div>
+      <canvas ref="minimap"></canvas>
     </div>
-    <template v-slot:tooltip><HuffmanTreeView v-bind="huffmanAttrs" @vue:mounted="updated" @vue:updated="updated"></HuffmanTreeView></template>
+    <template v-slot:tooltip><pre><code>{{ treeText }}</code></pre></template>
   </HasTooltip>
 </template>
 
 <style scoped>
-.minimap-wrapper {
-  display: block;
-  width: 8em;
-  height: 8em;
+pre {
+  line-height: 1;
+  white-space: pre;
 }
-.minimap-container {
-  width: max-content;
-  height: max-content;
-  transform-origin: top left;
+.container {
+  display: flex;
+  align-items: center;
 }
-
+canvas {
+  height: 24px;
+}
 </style>
