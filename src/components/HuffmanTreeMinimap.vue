@@ -49,9 +49,9 @@ const treeText = computed(() => {
 });
 
 const minimapHeight = 96;
-const minimapCharDrawMinHeight = 8;
+const minimapCharDrawMinHeight = 1;
+const minimapCharDrawMinWidth = 2;
 const minimapCharRatio = 0.5;
-const minimapCharDrawMinWidth = minimapCharDrawMinHeight * minimapCharRatio;
 
 const minimap = ref();
 
@@ -78,12 +78,13 @@ function update_minimap(str) {
     for (const [col, char] of line.split("").entries()) {
       const y = row * charY;
       const x = col * charX;
-      if (char === ' ') {
-        ctx.fillStyle = bgColor;
+      if (char === ' ' && (line[col-1] == ' ' || line[col+1] == ' ')) {
+        // remove small gaps
+        // do nothing
       } else {
         ctx.fillStyle = fgColor;
+        ctx.fillRect(x, y, charW, charH);
       }
-      ctx.fillRect(x, y, charW, charH);
     }
   }
 }

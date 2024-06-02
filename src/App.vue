@@ -2,7 +2,6 @@
 import ListView from './components/list-view/ListView.vue';
 import DeflateRoot from './components/list-view/DeflateRoot.vue';
 import HexView from './components/HexView.vue';
-import HuffmanTreeMinimap from './components/HuffmanTreeMinimap.vue';
 import { deflateRaw } from 'uzip';
 import { inflate_detail } from './inflate_detail.js';
 import { ref, watch } from 'vue';
@@ -38,7 +37,6 @@ function hlit2(begin, length, outBegin, outLength) {
   <div class="leftright">
     <ListView>
       <DeflateRoot :detail="detailRef" :hlit2="hlit2"></DeflateRoot>
-      <HuffmanTreeMinimap :tree="detail.blocks[0].code_length_tree" :symbolNames="[]" clickable></HuffmanTreeMinimap>
     </ListView>
     <div>
       <div>Deflated:</div>

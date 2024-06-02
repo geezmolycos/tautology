@@ -14,7 +14,7 @@ const isOpen = computed(() => {
 <template>
   <div :class="{'has-tooltip': true, open: isOpen, 'underline-clickable': clickable}">
     <span @click="tryOpen = !tryOpen"><slot></slot></span>
-    <span class="tooltip"><slot name="tooltip"></slot></span>
+    <div class="tooltip"><slot name="tooltip"></slot></div>
   </div>
 </template>
 
@@ -38,7 +38,7 @@ const isOpen = computed(() => {
   width: max-content;
   z-index: 1;
   top: 0;
-  left: calc(100% + 0.5em);
+  left: calc(100% + 0em);
   background-color: var(--color-background-soft);
 }
 

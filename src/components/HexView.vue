@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue';
 const props = defineProps({
   data: { default: new Uint8Array(0), type: Uint8Array },
   columns: { default: 16, type: Number },
@@ -44,7 +44,7 @@ function formatData(u8array, offset) {
 const dataLines = computed(() => {
   const l = [];
   let i, k;
-  for (i=0, k=startPos.value; i<props.rows && k+props.columns<dataLength.value; i++, k+=props.columns) {
+  for (i=0, k=startPos.value; i<(props.rows - 1) && k+props.columns<dataLength.value; i++, k+=props.columns) {
     l.push(formatData(props.data.slice(k, k+props.columns), k));
   }
   const last = formatData(props.data.slice(k, k+props.columns), k);
@@ -180,13 +180,30 @@ function highlight(start, end, seek) {
     const diffLines = Math.floor((start / 8 - displayStart) / props.columns);
     if (diffLines < 0) {
       move(diffLines);
-    } else if (diffLines > props.rows) {
-      move(diffLines - props.rows);
+    } else if (diffLines >= props.rows) {
+      move(diffLines - props.rows + 1);
     }
   }
   selStart.value = start;
   selEnd.value = end;
 }
+
+const showGoto = ref(false);
+const gotoInput = ref('');
+
+function moveTo(newStartPos) {
+  newStartPos = Math.floor(newStartPos / props.columns) * props.columns;
+  newStartPos = Math.max(0, Math.min(dataLength.value, newStartPos));
+  startPos.value = newStartPos;
+}
+
+watch(showGoto, (newValue, oldValue) => {
+  if (newValue) {
+    gotoInput.value = formatOffset(startPos.value);
+  } else {
+    moveTo(parseInt(gotoInput.value, 16));
+  }
+});
 
 defineExpose({highlight});
 
@@ -202,15 +219,17 @@ defineExpose({highlight});
       </div>
       <div v-if="flipped" class="offset header" style="text-align: right;">{{ formatOffset(dataLength) }}</div>
       <div v-else class="placeholder header"></div>
-      <div class="ascii header">ASCII
-        <span class="clickable" @click="move(-4)">&lt;</span>
-        <span class="clickable" @click="move(+4)">&gt;</span>
-        <span class="clickable" @click="move(-16)">(</span>
-        <span class="clickable" @click="move(+16)">)</span>
-        <span class="clickable" @click="move(-256)">[</span>
-        <span class="clickable" @click="move(+256)">]</span>
-        <span class="clickable" @click="move(-4096)">{</span>
-        <span class="clickable" @click="move(+4096)">}</span>
+      <div class="ascii header">
+        <span class="clickable" :class="{active: showGoto}" @click="showGoto = !showGoto">Goto</span><!--
+        -->&nbsp;<span v-show="!showGoto">
+          <span class="clickable" @click="move(-16)">-4</span>
+          <span class="clickable" @click="move(-4)">-1</span>
+          <span class="clickable" @click="move(+4)">+1</span>
+          <span class="clickable" @click="move(+16)">+4</span>
+        </span>
+        <span v-show="showGoto">
+          <input type="text" :style="{width: Math.min(8, (offsetLength + 2)).toString() + 'ch'}" @focus="$event.target.select()" v-model="gotoInput">
+        </span>
       </div>
       <div v-if="!flipped" class="offset lines">
         <div class="offset-item" v-for="(offset, index) in offsets" :key="index">{{ offset !== '' ? offset + ':' : ' ' }}</div>

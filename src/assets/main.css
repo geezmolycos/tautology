@@ -42,3 +42,11 @@
   user-select: none;
   cursor: pointer;
 }
+
+input[type="text"] {
+  background: var(--color-background-mute);
+  border: 1px dashed var(--color-clickable-accent);
+  color: var(--color-text);
+  font-family: monospace;
+  box-sizing: content-box;
+}
