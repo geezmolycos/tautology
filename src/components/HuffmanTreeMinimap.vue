@@ -49,8 +49,9 @@ const treeText = computed(() => {
 });
 
 const minimapHeight = 96;
-const minimapCharDrawMinHeight = 1;
-const minimapCharDrawMinWidth = 2;
+const minimapCharMaxY = 8;
+const minimapCharMinHeight = 1;
+const minimapCharMinWidth = 2;
 const minimapCharRatio = 0.5;
 
 const minimap = ref();
@@ -61,10 +62,10 @@ function update_minimap(str) {
   const lines = str.split('\n');
   const rows = lines.length;
   const cols = Math.max(...lines.map(line => line.length));
-  const charY = minimapHeight / rows;
+  const charY = Math.min(minimapHeight / rows, minimapCharMaxY);
   const charX = charY * minimapCharRatio;
-  const charW = Math.max(minimapCharDrawMinWidth, charX);
-  const charH = Math.max(minimapCharDrawMinHeight, charY);
+  const charW = Math.max(minimapCharMinWidth, charX);
+  const charH = Math.max(minimapCharMinHeight, charY);
   const bgColor = getComputedStyle(canvas).getPropertyValue("--color-background");
   const fgColor = getComputedStyle(canvas).getPropertyValue("--color-text");
   
