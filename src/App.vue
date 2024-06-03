@@ -6,7 +6,7 @@ import { deflateRaw } from 'uzip';
 import { inflate_detail } from './inflate_detail.js';
 import { ref, watch } from 'vue';
 
-const str = `123456789241879674320175948529841520189415985204986024987184131749810747101809748916074180910748943u5t8439yhw8iu3rfw8i93aoltfrhyg4e3wiju78aot5fghy4b3ewaju7i8to54y3auwjo5ry32q895ry3few28quj9dsiajyrf53edw287uar5t3e2w847ur3et2wds4r8784935wayt53eyw895trli4 3w9i85qr 4v32q v084roy7f932w jqkoiy897403yv jq89 v6i`;
+const str = `\x00\x00\ 3w9i85qr 4v32q v084roy7f932w jqkoiy897403yv jq89 v6i v6i   v6i  v6i v6ia  vs632w jqkoiy8974032w jqkoiy89740i v6i   v6 i v32w jqkoi3w4tw3ty4w3eyt543ery54r3eygh5rf4esyhz54rey8974032w jqkoiy897406i  32w jqkoiy89740  32w jqkoiy8974032w jqkoiy8974032w jqkoiy8974032w jqkoiy89740`;
 // const str = `12345434t3w4edr434t3w`;
 const encoder = new TextEncoder();
 const encodedArray = encoder.encode(str, {});

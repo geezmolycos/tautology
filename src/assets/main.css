@@ -10,10 +10,10 @@
 :root {
   --color-selected: #66ccff;
   --color-clickable: var(--color-background);
-  --color-clickable-accent: #996633;
-  --color-highlight: #336699;
+  --color-clickable-accent: #cc9933;
+  --color-highlight: #3399cc;
   @media (prefers-color-scheme: dark) {
-    --color-selected: #336699;
+    --color-selected: #3399cc;
     --color-clickable: var(--color-background);
     --color-clickable-accent: #ffcc66;
     --color-highlight: #66ccff;
@@ -37,10 +37,12 @@
 
 .highlight {
   display: inline-block;
-  font-size: 0.8em;
   color: var(--color-highlight);
   user-select: none;
   cursor: pointer;
+}
+.small {
+  font-size: 0.8em;
 }
 
 input[type="text"] {
@@ -48,5 +50,17 @@ input[type="text"] {
   border: 1px dashed var(--color-clickable-accent);
   color: var(--color-text);
   font-family: monospace;
+  font-size: 1em;
   box-sizing: content-box;
+}
+
+table, th, td {
+  border: 1px solid  var(--color-border);
+  border-collapse: collapse;
+}
+td {
+  padding: 0 0.25em;
+}
+thead {
+  background: var(--color-background-mute);
 }

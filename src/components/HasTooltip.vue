@@ -13,7 +13,7 @@ const isOpen = computed(() => {
 
 <template>
   <div :class="{'has-tooltip': true, open: isOpen, 'underline-clickable': clickable}">
-    <span @click="tryOpen = !tryOpen"><slot></slot></span>
+    <span @click.stop="tryOpen = !tryOpen"><slot></slot></span>
     <div class="tooltip"><slot name="tooltip"></slot></div>
   </div>
 </template>
@@ -46,7 +46,7 @@ const isOpen = computed(() => {
   visibility: visible;
 }
 
-.has-tooltip:hover .tooltip {
+.has-tooltip :first-child:hover + .tooltip {
   visibility: visible;
 }
 

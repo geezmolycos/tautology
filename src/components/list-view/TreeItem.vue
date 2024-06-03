@@ -17,7 +17,7 @@ function toggle() {
   <div class="tree-item-wrapper">
     <div @click.prevent="toggle" class="tree-item">
       <span class="clickable">{{ isOpen ? "[-]" : "[+]"}}</span>
-      <slot name="summary"></slot>
+      <span class="summary-wrapper"><slot name="summary"></slot></span>
     </div>
     <div class="tree-item-inner" v-show="isOpen">
       <slot></slot>
@@ -26,7 +26,13 @@ function toggle() {
 </template>
 
 <style scoped>
-  .tree-item-inner {
-    padding-left: 1em;
-  }
+.tree-item > * {
+  vertical-align: top;
+}
+.tree-item-inner {
+  padding-left: 1em;
+}
+.summary-wrapper {
+  display: inline-block;
+}
 </style>

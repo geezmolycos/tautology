@@ -14,25 +14,28 @@ function decodeTiny_detail(lmap, LL, len, data, pos, tree) {
         pos+=symbol.size;
         var lit = code>>>4;
         symbol.value = lit;
-        if(lit<=15) {  symbol.type = 'lit'; tree[i]=lit;  i++;  }
+        if(lit<=15) {  symbol.type = 'lit'; symbol.out = i; tree[i]=lit;  i++;  }
         else {
             var ll = 0, n = 0;
             if(lit==16) {
-                symbol.type = 'rep';
+                symbol.type = 'dup';
+                symbol.out = i;
                 symbol.length_base_value = 3;
                 symbol.length_extra_size = 2;
                 symbol.length_extra_value = bitsE(data, pos, 2);
                 n = (3  + symbol.length_extra_value);  pos += 2;  ll = tree[i-1];
             }
             else if(lit==17) {
-                symbol.type = 'rpz';
+                symbol.type = 'zro';
+                symbol.out = i;
                 symbol.length_base_value = 3;
                 symbol.length_extra_size = 3;
                 symbol.length_extra_value = bitsE(data, pos, 3);
                 n = (3  + symbol.length_extra_value);  pos += 3;
             }
             else if(lit==18) {
-                symbol.type = 'rpz';
+                symbol.type = 'zro';
+                symbol.out = i;
                 symbol.length_base_value = 11;
                 symbol.length_extra_size = 7;
                 symbol.length_extra_value = bitsE(data, pos, 7);

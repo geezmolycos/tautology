@@ -10,7 +10,7 @@ const props = defineProps({
 })
 const startPos = ref(0);
 const selStart = ref(0);
-const selEnd = ref(140);
+const selEnd = ref(0);
 
 const dataLength = computed(() => {
   return props.data.byteLength;
@@ -38,6 +38,7 @@ function formatData(u8array, offset) {
     hex: it.toString(16).toUpperCase().padStart(2, "0"),
     ascii: (0x20 <= it && it <= 0x7e) ? String.fromCharCode(it) : '.',
     offset: offset + i,
+    iszero: it === 0,
   }));
   return array;
 }
@@ -52,6 +53,7 @@ const dataLines = computed(() => {
     last.push({
       hex: "  ",
       ascii: " ",
+      iszero: false,
     });
   }
   l.push(last);
@@ -114,7 +116,7 @@ function getByteBinary(position) {
   }
   const start = 8 - Math.min(8, selEnd.value - position * 8);
   const end = 8 - Math.max(0, selStart.value - position * 8);
-  return [binary.slice(0, start), binary.slice(start, end), binary.slice(end, 8)];
+  return [binary.slice(0, start), binary.slice(start, end), binary.slice(end, 8), value];
 }
 
 const binaryLines = computed(() => {
@@ -151,7 +153,9 @@ const binaryOffsets = computed(() => {
   const showEnd = Math.min(dataLength.value, Math.ceil(selEnd.value / 8) + 1);
   const rows = Math.ceil((showEnd - showStart) / 4);
   if (rows <= 4) {
-    return [[...Array(rows).keys()].map(x => formatOffset(showStart + x * 4))];
+    return [
+      [...Array(rows).keys()].map(x => formatOffset(showStart + x * 4)).concat(Array(4 - rows).fill(''))
+    ];
   }
   return [
     [formatOffset(showStart), '', '...', ''],
@@ -175,7 +179,7 @@ function move(lines) {
 }
 
 function highlight(start, end, seek) {
-  if (seek) {
+  if (seek && (start !== end)) {
     const displayStart = startPos.value;
     const diffLines = Math.floor((start / 8 - displayStart) / props.columns);
     if (diffLines < 0) {
@@ -239,7 +243,7 @@ defineExpose({highlight});
         <div :class="{line: true, flipped: flipped}" v-for="(line, index) in dataLines" :key="index">
           <div class="hex-item"
           :style="{background: selectionBackground(item.offset)}"
-          v-for="(item, lineindex) in line" :key="lineindex">{{ item.hex }}</div>
+          v-for="(item, lineindex) in line" :key="lineindex" :class="{zero: item.iszero}">{{ item.hex }}</div>
         </div>
       </div>
       <div v-if="flipped" class="offset lines">
@@ -250,7 +254,7 @@ defineExpose({highlight});
         <div :class="{line: true, flipped: flipped}" v-for="(line, index) in dataLines" :key="index">
           <div class="ascii-item"
           :style="{background: selectionBackground(item.offset)}"
-          v-for="(item, lineindex) in line" :key="lineindex">{{ item.ascii }}</div>
+          v-for="(item, lineindex) in line" :key="lineindex" :class="{zero: item.iszero}">{{ item.ascii }}</div>
         </div>
       </div>
     </div>
@@ -270,7 +274,7 @@ defineExpose({highlight});
       <div class="lines" style="grid-row: 2;">
         <div :class="{line: true, flipped: flipped}" v-for="(line, index) in binaryLines" :key="index">
           <div class="binary-item"
-          v-for="(item, lineindex) in line" :key="lineindex">
+          v-for="(item, lineindex) in line" :key="lineindex" :class="{zero: item[3] === 0}">
             <span v-if="item[0]">{{ item[0] }}</span><span class="selected">{{ item[1] }}</span><span v-if="item[2]">{{ item[2] }}</span>
           </div>
         </div>
@@ -380,6 +384,10 @@ defineExpose({highlight});
 .binary-offset-item.selected {
   padding: 0;
   width: fit-content;
+}
+
+.zero {
+  opacity: 50%;
 }
 
 </style>

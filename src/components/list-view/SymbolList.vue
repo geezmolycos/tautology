@@ -3,7 +3,7 @@ import TreeItem from './TreeItem.vue';
 import HighlightTag from '../HighlightTag.vue';
 import SymbolItem from './SymbolItem.vue';
 import { ref, computed } from 'vue';
-const props = defineProps(['symbols', 'begin', 'length', 'outBegin', 'outLength']);
+const props = defineProps(['symbols', 'begin', 'length', 'outBegin', 'outLength', 'noAscii']);
 const startPos = ref(0);
 const itemsPerPage = 256;
 
@@ -30,6 +30,6 @@ function changePage(n) {
       <span class="clickable" @click="changePage(+1)">-&gt;</span>
       Page {{ startPos / itemsPerPage + 1 }} / {{ Math.floor(symbols.length / itemsPerPage) + 1 }}
     </div>
-    <SymbolItem v-for="(symbol, index) in currentPageSymbols" :key="index" :symbol="symbol" :begin="begin"></SymbolItem>
+    <SymbolItem v-for="(symbol, index) in currentPageSymbols" :key="index" :symbol="symbol" :begin="begin" :no-ascii="noAscii"></SymbolItem>
   </TreeItem>
 </template>

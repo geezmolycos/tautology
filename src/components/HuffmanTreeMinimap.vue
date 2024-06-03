@@ -113,6 +113,7 @@ onMounted(() => {
 pre {
   line-height: 1;
   white-space: pre;
+  font-size: 0.8em;
 }
 .container {
   display: flex;
