@@ -6,8 +6,7 @@ import { deflateRaw } from 'uzip';
 import { inflate_detail } from './inflate_detail.js';
 import { ref, watch } from 'vue';
 
-const str = `\x00\x00\ 3w9i85qr 4v32q v084roy7f932w jqkoiy897403yv jq89 v6i v6i   v6i  v6i v6ia  vs632w jqkoiy8974032w jqkoiy89740i v6i   v6 i v32w jqkoi3w4tw3ty4w3eyt543ery54r3eygh5rf4esyhz54rey8974032w jqkoiy897406i  32w jqkoiy89740  32w jqkoiy8974032w jqkoiy8974032w jqkoiy8974032w jqkoiy89740`;
-// const str = `12345434t3w4edr434t3w`;
+const str = `12345434t3w4edr434t3w`;
 const encoder = new TextEncoder();
 const encodedArray = encoder.encode(str, {});
 const deflated = deflateRaw(encodedArray, {level:9});

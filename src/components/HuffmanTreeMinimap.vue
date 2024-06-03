@@ -12,7 +12,7 @@ const itemCount = computed(() => {
 function binaryTreeFromArray(arr, symbolNames) {
   const tree = {};
   for (let i = 0; i < arr.length; i += 2) {
-    const code = arr[i].toString(2).padStart(arr[i + 1], '0');
+    const code = arr[i].toString(2).padStart(arr[i + 1], '0').split('').reverse().join('');
     let currentNode = tree;
     for (let j = 0; j < code.length; j++) {
       if (!currentNode[code[j]]) {
@@ -45,7 +45,7 @@ const treeToDraw = computed(() => {
 const drawTree2 = window.drawTree2;
 
 const treeText = computed(() => {
-  return drawTree2(false)(true)(treeToDraw.value);
+  return drawTree2(true)(true)(treeToDraw.value);
 });
 
 const minimapHeight = 96;
