@@ -8,8 +8,6 @@ import { computed } from 'vue';
 import UZIP from 'uzip';
 import { literalLengthSymbols } from '../LiteralLengthDistanceSymbols.js';
 
-console.log(UZIP);
-
 const fixed_literal_length_tree = UZIP.F.U.fltree;
 const fixed_distance_tree = UZIP.F.U.fdtree;
 

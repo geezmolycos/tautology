@@ -56,7 +56,7 @@ export function inflate_detail(data, buf) {
 
     var u8=Uint8Array;
     if(data[0]==3 && data[1]==0) return {};
-    var F=UZIP.F, bitsF = F._bitsF, bitsE = F._bitsE, decodeTiny = decodeTiny_detail, makeCodes = F.makeCodes, codes2map=F.codes2map, get17 = F._get17;
+    var F=UZIP.F, bitsF = F._bitsF, bitsE = F._bitsE, decodeTiny = decodeTiny_detail, makeCodes = F.makeCodes, codes2map=F.codes2map, revCodes=F.revCodes, get17 = F._get17;
     var U = F.U;
 
     var noBuf = (buf==null);
@@ -116,6 +116,8 @@ export function inflate_detail(data, buf) {
             // itree is stored as [code, code_length, code, code_length, ...]
             makeCodes(U.itree, tl);
             codes2map(U.itree, tl, U.imap);
+            revCodes (U.itree, tl);
+
             detail_block.code_length_tree = U.itree;
             detail_block.code_length_map = U.imap;
 
@@ -137,10 +139,12 @@ export function inflate_detail(data, buf) {
             //var ml = decodeTiny(U.imap, (1<<tl)-1, HLIT , data, pos, U.ltree); ML = (1<<(ml>>>24))-1;  pos+=(ml&0xffffff);
             makeCodes(U.ltree, mx0);
             codes2map(U.ltree, mx0, lmap);
+            revCodes (U.ltree, mx0);
 
             //var md = decodeTiny(U.imap, (1<<tl)-1, HDIST, data, pos, U.dtree); MD = (1<<(md>>>24))-1;  pos+=(md&0xffffff);
             makeCodes(U.dtree, mx1);
             codes2map(U.dtree, mx1, dmap);
+            revCodes (U.dtree, mx1);
         }
         detail_block.data_begin = pos;
         detail_block.out_begin = off;
